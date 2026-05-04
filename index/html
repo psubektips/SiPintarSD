@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIPINTAR SD Ceria</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Fredoka', sans-serif;
+    background: linear-gradient(135deg, #ff9a9e, #fad0c4, #a18cd1);
+}
+
+/* HEADER */
+header {
+    text-align: center;
+    padding: 20px;
+    color: white;
+    font-size: 24px;
+}
+
+/* NAV */
+nav {
+    display: flex;
+    justify-content: space-around;
+    background: white;
+    padding: 10px;
+    border-radius: 20px;
+    margin: 10px;
+}
+
+nav button {
+    border: none;
+    background: none;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+/* CARD */
+.container {
+    padding: 15px;
+}
+
+.card {
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+    animation: pop 0.3s ease;
+}
+
+@keyframes pop {
+    from {transform: scale(0.9);}
+    to {transform: scale(1);}
+}
+
+.hidden { display: none; }
+
+/* BUTTON */
+.btn {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 15px;
+    border: none;
+    background: linear-gradient(45deg, #36d1dc, #5b86e5);
+    color: white;
+    font-size: 16px;
+}
+
+/* INPUT */
+input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 15px;
+    border: 1px solid #ccc;
+}
+
+/* PROGRESS */
+.progress {
+    height: 15px;
+    background: #eee;
+    border-radius: 10px;
+    margin: 10px 0;
+}
+
+.bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(to right, #00c6ff, #0072ff);
+    border-radius: 10px;
+}
+
+/* EMOJI */
+.emoji {
+    font-size: 40px;
+    text-align: center;
+}
+
+/* TABLE */
+table {
+    width: 100%;
+}
+</style>
+</head>
+
+<body>
+
+<header>🐰 SIPINTAR SD Ceria 🌈</header>
+
+<nav>
+<button onclick="showPage('home')">🏠</button>
+<button onclick="showPage('game')">🎮</button>
+<button onclick="showPage('dashboard')">📊</button>
+</nav>
+
+<div class="container">
+
+<!-- HOME -->
+<div id="home" class="card">
+<div class="emoji">🧳✨</div>
+<h3>Selamat Datang!</h3>
+<p>Masukkan nama kamu untuk mulai petualangan belajar!</p>
+
+<input id="nama" placeholder="Nama">
+<input id="kelas" placeholder="Kelas">
+
+<button class="btn" onclick="login()">🚀 Mulai</button>
+</div>
+
+<!-- GAME -->
+<div id="game" class="card hidden">
+<div class="emoji">🎮🧠</div>
+<h3 id="q"></h3>
+
+<div class="progress"><div id="bar" class="bar"></div></div>
+
+<div id="opsi"></div>
+<p id="skor"></p>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="card hidden">
+<div class="emoji">🏆📊</div>
+<h3>Ranking Kelas</h3>
+
+<select id="filterKelas" onchange="renderDashboard()"></select>
+
+<table>
+<thead>
+<tr><th>Nama</th><th>Skor</th></tr>
+</thead>
+<tbody id="tabel"></tbody>
+</table>
+
+<canvas id="chart"></canvas>
+</div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+let user={}, current=0, score=0;
+
+const soal=[
+{q:"Tema adalah...",a:["Tempat","Ide pokok","Tokoh"],c:1},
+{q:"Tokoh adalah...",a:["Pelaku","Tempat","Waktu"],c:0},
+{q:"Amanat adalah...",a:["Pesan moral","Alur","Tokoh"],c:0}
+];
+
+function showPage(p){
+document.querySelectorAll('.card').forEach(el=>el.classList.add('hidden'));
+document.getElementById(p).classList.remove('hidden');
+
+if(p==="dashboard") renderDashboard();
+}
+
+function login(){
+user.nama=document.getElementById("nama").value;
+user.kelas=document.getElementById("kelas").value;
+showPage("game");
+loadSoal();
+}
+
+function loadSoal(){
+if(current>=soal.length){
+simpanNilai();
+return;
+}
+
+let s=soal[current];
+document.getElementById("q").innerText=s.q;
+
+let html="";
+s.a.forEach((ops,i)=>{
+html+=`<button class="btn" onclick="jawab(${i})">${ops}</button>`;
+});
+
+document.getElementById("opsi").innerHTML=html;
+document.getElementById("skor").innerText="Skor: "+score;
+
+let progress=(current/soal.length)*100;
+document.getElementById("bar").style.width=progress+"%";
+}
+
+function jawab(i){
+if(i===soal[current].c){
+score+=10;
+}
+current++;
+loadSoal();
+}
+
+function simpanNilai(){
+let data=JSON.parse(localStorage.getItem("nilai"))||[];
+data.push({nama:user.nama,kelas:user.kelas,skor:score});
+localStorage.setItem("nilai",JSON.stringify(data));
+alert("🎉 Hebat! Skor kamu: "+score);
+}
+
+function renderDashboard(){
+let data=JSON.parse(localStorage.getItem("nilai"))||[];
+
+let kelasSet=[...new Set(data.map(d=>d.kelas))];
+
+let select=document.getElementById("filterKelas");
+select.innerHTML="";
+kelasSet.forEach(k=>select.innerHTML+=`<option>${k}</option>`);
+
+let kelas=select.value||kelasSet[0];
+let filtered=data.filter(d=>d.kelas===kelas).sort((a,b)=>b.skor-a.skor);
+
+let html="";
+filtered.forEach(d=>{
+html+=`<tr><td>${d.nama}</td><td>${d.skor}</td></tr>`;
+});
+document.getElementById("tabel").innerHTML=html;
+
+new Chart(document.getElementById("chart"),{
+type:"bar",
+data:{
+labels:filtered.map(d=>d.nama),
+datasets:[{data:filtered.map(d=>d.skor)}]
+}
+});
+}
+</script>
+
+</body>
+</html>
